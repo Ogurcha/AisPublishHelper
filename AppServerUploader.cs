@@ -16,7 +16,7 @@ internal static class AppServerUploader
         }
 
         var shareRoot = GetShareRoot(settings);
-        var remoteRoot = GetRemoteUnc(settings);
+        var remoteRoot = GetRemoteUnc(settings, out string pathForUpdater);
 
         ConsoleUi.Info($"Connecting to {shareRoot} as {settings.Updater.User}...");
         SmbDiagnostics.PrintHostLookup(settings.Updater.Host);
@@ -78,11 +78,16 @@ internal static class AppServerUploader
         foreach (var source in files)
         {
             var relative = Path.GetRelativePath(settings.AppServerLocalPath, source);
-            var destination = Path.Combine(remoteRoot, relative);
-            if (destination.Contains("\\UpdateClient\\"))
+            string destination;
+            if (relative.Contains("UpdateClient"))
             {
-                destination = destination.Replace("\\gaz21\\00000001", "");
+                destination = Path.Combine(pathForUpdater, relative);
             }
+            else
+            {
+                destination = Path.Combine(remoteRoot, relative);
+            }
+                
             var destinationDir = Path.GetDirectoryName(destination)
                 ?? throw new InvalidOperationException($"Could not determine destination folder for {relative}.");
 
@@ -109,16 +114,17 @@ internal static class AppServerUploader
         return $@"\\{settings.Updater.Host}\{settings.Updater.Share}";
     }
 
-    public static string GetRemoteUnc(PublishSettings settings)
+    public static string GetRemoteUnc(PublishSettings settings, out string pathForUpdater)
     {
         var shareRoot = GetShareRoot(settings);
         var shareLocal = Path.GetFullPath(settings.Updater.ShareLocalPath);
-        var remoteLocal = Path.GetFullPath(settings.UpdaterRemoteDirectory);
+        var remoteLocal = Path.GetFullPath(Path.Combine(settings.UpdaterRemoteDirectory, settings.UpdaterRemoteDirectoryPart2));
+        pathForUpdater = settings.UpdaterRemoteDirectory;
         var relative = Path.GetRelativePath(shareLocal, remoteLocal);
         if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative))
         {
             throw new InvalidOperationException(
-                $"Remote directory '{settings.UpdaterRemoteDirectory}' is not under share local path '{settings.Updater.ShareLocalPath}'.");
+                $"Remote directory '{Path.Combine(settings.UpdaterRemoteDirectory, settings.UpdaterRemoteDirectoryPart2)}' is not under share local path '{settings.Updater.ShareLocalPath}'.");
         }
 
         return Path.Combine(shareRoot, relative);

@@ -13,6 +13,7 @@ public sealed class PublishSettings
     public List<string> ExcludedProjects { get; set; } = [];
     public string AppServerLocalPath { get; set; } = "";
     public string UpdaterRemoteDirectory { get; set; } = "";
+    public string UpdaterRemoteDirectoryPart2 { get; set; } = "";
     public string InstallerResultPath { get; set; } = "";
     public string ZipFileName { get; set; } = "dosc.zip";
     public List<string> ZipEntries { get; set; } = [];
@@ -41,6 +42,7 @@ public sealed class PublishSettings
         Require(InstallerSolution, nameof(InstallerSolution));
         Require(AppServerLocalPath, nameof(AppServerLocalPath));
         Require(UpdaterRemoteDirectory, nameof(UpdaterRemoteDirectory));
+        Require(UpdaterRemoteDirectoryPart2, nameof(UpdaterRemoteDirectoryPart2));
         Require(InstallerResultPath, nameof(InstallerResultPath));
         Require(ZipFileName, nameof(ZipFileName));
         Require(SftpRemoteZipPath, nameof(SftpRemoteZipPath));
