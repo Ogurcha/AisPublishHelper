@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using System.Security.Cryptography;
+
 namespace AisPublishHelper;
 
 internal static class AppServerUploader
@@ -70,13 +73,15 @@ internal static class AppServerUploader
                 $"No .dll or .exe files found under {settings.AppServerLocalPath}.");
         }
 
-        ConsoleUi.Info($"Copying {files.Count} .dll/.exe file(s), replacing on conflict. Subfolders will not be created.");
+        ConsoleUi.Info($"Copying {files.Count} .dll/.exe file(s). Files with the same version and hash are skipped. Subfolders will not be created.");
         Console.WriteLine();
 
         var copied = 0;
+        var skipped = 0;
         long bytes = 0;
-        foreach (var source in files)
+        for (var i = 0; i < files.Count; i++)
         {
+            var source = files[i];
             var relative = Path.GetRelativePath(settings.AppServerLocalPath, source);
             string destination;
             if (relative.Contains("UpdateClient"))
@@ -98,15 +103,22 @@ internal static class AppServerUploader
                     $"Needed for local file: {relative}");
             }
 
+            if (IsUnchanged(source, destination))
+            {
+                skipped++;
+                Console.WriteLine($"  [{i + 1}/{files.Count}] skip {relative}");
+                continue;
+            }
+
             ClearReadOnly(destination);
             File.Copy(source, destination, overwrite: true);
             copied++;
             bytes += new FileInfo(source).Length;
-            Console.WriteLine($"  [{copied}/{files.Count}] {relative}");
+            Console.WriteLine($"  [{i + 1}/{files.Count}] {relative}");
         }
 
         Console.WriteLine();
-        ConsoleUi.Success($"Uploaded {copied} file(s) ({FormatBytes(bytes)}) to the updater server.");
+        ConsoleUi.Success($"Uploaded {copied} file(s) ({FormatBytes(bytes)}), skipped {skipped} unchanged, to the updater server.");
     }
 
     public static string GetShareRoot(PublishSettings settings)
@@ -128,6 +140,44 @@ internal static class AppServerUploader
         }
 
         return Path.Combine(shareRoot, relative);
+    }
+
+    private static bool IsUnchanged(string source, string destination)
+    {
+        if (!File.Exists(destination))
+        {
+            return false;
+        }
+
+        if (!SameFileVersion(source, destination))
+        {
+            return false;
+        }
+
+        var sourceLength = new FileInfo(source).Length;
+        var destinationLength = new FileInfo(destination).Length;
+        if (sourceLength != destinationLength)
+        {
+            return false;
+        }
+
+        return ComputeSha256(source).AsSpan().SequenceEqual(ComputeSha256(destination));
+    }
+
+    private static bool SameFileVersion(string source, string destination)
+    {
+        var sourceVersion = FileVersionInfo.GetVersionInfo(source);
+        var destinationVersion = FileVersionInfo.GetVersionInfo(destination);
+        return sourceVersion.FileMajorPart == destinationVersion.FileMajorPart
+            && sourceVersion.FileMinorPart == destinationVersion.FileMinorPart
+            && sourceVersion.FileBuildPart == destinationVersion.FileBuildPart
+            && sourceVersion.FilePrivatePart == destinationVersion.FilePrivatePart;
+    }
+
+    private static byte[] ComputeSha256(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return SHA256.HashData(stream);
     }
 
     private static void ClearReadOnly(string path)
