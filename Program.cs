@@ -91,7 +91,7 @@ internal static class Program
                 "Local source:",
                 settings.AppServerLocalPath,
                 "Remote destination (Windows file share):",
-                AppServerUploader.GetRemoteUnc(settings),
+                AppServerUploader.GetRemoteUnc(settings, out _),
                 "Only .dll and .exe files are copied. Existing files are replaced. Missing remote folders fail fast.");
         if (confirmStep3 == ConfirmStatusEnum.Abort)
         {

@@ -57,7 +57,7 @@ internal static class AppServerUploader
         if (!Directory.Exists(remoteRoot))
         {
             throw new DirectoryNotFoundException(
-                $"Remote update folder does not exist (failing fast): {remoteRoot}");
+                $"Remote update folder does not exist: {remoteRoot}");
         }
 
         ConsoleUi.Info($"Remote folder found: {remoteRoot}");
@@ -131,7 +131,7 @@ internal static class AppServerUploader
         var shareRoot = GetShareRoot(settings);
         var shareLocal = Path.GetFullPath(settings.Updater.ShareLocalPath);
         var remoteLocal = Path.GetFullPath(Path.Combine(settings.UpdaterRemoteDirectory, settings.UpdaterRemoteDirectoryPart2));
-        pathForUpdater = settings.UpdaterRemoteDirectory;
+        pathForUpdater = Path.Combine(shareRoot, Path.GetRelativePath(shareLocal, Path.GetFullPath(settings.UpdaterRemoteDirectory)));
         var relative = Path.GetRelativePath(shareLocal, remoteLocal);
         if (relative.StartsWith("..", StringComparison.Ordinal) || Path.IsPathRooted(relative))
         {
