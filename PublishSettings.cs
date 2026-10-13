@@ -16,8 +16,11 @@ public sealed class PublishSettings
     public string UpdaterRemoteDirectoryPart2 { get; set; } = "";
     public string InstallerResultPath { get; set; } = "";
     public string ZipFileName { get; set; } = "dosc.zip";
+    public List<string> Entries { get; set; } = [];
     public List<string> ZipEntries { get; set; } = [];
     public string SftpRemoteZipPath { get; set; } = "";
+    public string SftpRemoteNoZipPath { get; set; } = "";
+    public bool Step4DoDoscArchive { get; set; } = false;
     public WindowsShareSettings Updater { get; set; } = new();
     public SshSettings PortalSsh { get; set; } = new();
 
@@ -46,6 +49,8 @@ public sealed class PublishSettings
         Require(InstallerResultPath, nameof(InstallerResultPath));
         Require(ZipFileName, nameof(ZipFileName));
         Require(SftpRemoteZipPath, nameof(SftpRemoteZipPath));
+        Require(Step4DoDoscArchive.ToString(), nameof(Step4DoDoscArchive));
+        Require(SftpRemoteNoZipPath, nameof(SftpRemoteNoZipPath));
         Require(Updater.Host, "Updater.Host");
         Require(Updater.Share, "Updater.Share");
         Require(Updater.ShareLocalPath, "Updater.ShareLocalPath");

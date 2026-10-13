@@ -103,14 +103,27 @@ internal static class Program
             AppServerUploader.Upload(settings);
         }
 
-        var confirmStep4 = ConsoleUi.ConfirmStep(
+        ConfirmStatusEnum confirmStep4;
+        if (settings.Step4DoDoscArchive)
+        {
+            confirmStep4 = ConsoleUi.ConfirmStep(
                 "Step 4 of 4: Pack installer files and upload dosc.zip to the web portal",
                 "Local source:",
                 settings.InstallerResultPath,
                 "Zip name: " + settings.ZipFileName,
-                "Contents: " + string.Join(", ", settings.ZipEntries),
+                "Contents: " + string.Join(", ", settings.Entries.Union(settings.ZipEntries)),
                 $"SSH upload to {settings.PortalSsh.Host}:{settings.PortalSsh.Port} as {settings.PortalSsh.User}",
                 "Remote file: " + settings.SftpRemoteZipPath);
+        }
+        else
+        {
+            confirmStep4 = ConsoleUi.ConfirmStep(
+                "Step 4 of 4: Upload installers to the web portal",
+                "Local source:",
+                settings.InstallerResultPath,
+                $"SSH upload to {settings.PortalSsh.Host}:{settings.PortalSsh.Port} as {settings.PortalSsh.User}",
+                "Remote dir: " + settings.SftpRemoteNoZipPath);
+        }
 
         if (confirmStep4 == ConfirmStatusEnum.Abort)
         {
@@ -119,8 +132,16 @@ internal static class Program
 
         if (confirmStep4 == ConfirmStatusEnum.Go)
         {
-            var zipPath = InstallerZipBuilder.Create(settings);
-            SftpUploader.UploadZip(settings, zipPath);
+            if (settings.Step4DoDoscArchive)
+            {
+                var zipPath = InstallerZipBuilder.Create(settings);
+                SftpUploader.UploadZip(settings, zipPath);
+            }
+            else
+            {
+                SftpUploader.UploadFiles(settings, settings.Entries);
+            }
+            
         }
         
         return true;

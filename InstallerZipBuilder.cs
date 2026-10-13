@@ -11,7 +11,9 @@ internal static class InstallerZipBuilder
             throw new DirectoryNotFoundException($"Installer result folder not found: {settings.InstallerResultPath}");
         }
 
-        foreach (var entry in settings.ZipEntries)
+        var zipEntries = settings.Entries.Union(settings.ZipEntries).ToList();
+
+        foreach (var entry in zipEntries)
         {
             var source = Path.Combine(settings.InstallerResultPath, entry);
             if (!File.Exists(source) && !Directory.Exists(source))
@@ -29,7 +31,7 @@ internal static class InstallerZipBuilder
         }
 
         ConsoleUi.Info($"Creating {settings.ZipFileName} from:");
-        foreach (var entry in settings.ZipEntries)
+        foreach (var entry in zipEntries)
         {
             ConsoleUi.Info("  " + entry);
         }
@@ -37,7 +39,7 @@ internal static class InstallerZipBuilder
         using (var zipStream = File.Create(tempPath))
         using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
         {
-            foreach (var entry in settings.ZipEntries)
+            foreach (var entry in zipEntries)
             {
                 var source = Path.Combine(settings.InstallerResultPath, entry);
                 if (Directory.Exists(source))
